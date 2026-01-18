@@ -37,12 +37,33 @@ export function getModelConfig() {
 }
 
 /**
- * 检查是否已配置模型
+ * 检查是否已配置模型（同步，仅检查用户配置）
  * @returns {boolean} 是否已配置
  */
 export function hasModelConfig() {
   const config = getModelConfig();
   return !!(config && config.apiUrl && config.apiKey && config.modelName);
+}
+
+/**
+ * 检查是否有可用的配置（异步，检查用户配置和官方配置）
+ * @returns {Promise<boolean>} 是否有可用配置
+ */
+export async function hasAnyConfig() {
+  // 先检查用户配置
+  if (hasModelConfig()) {
+    return true;
+  }
+  
+  // 再检查官方配置
+  try {
+    const { getOfficialConfig } = await import('../services/configService');
+    const officialConfig = await getOfficialConfig();
+    return !!officialConfig;
+  } catch (error) {
+    console.error('检查官方配置失败:', error);
+    return false;
+  }
 }
 
 /**

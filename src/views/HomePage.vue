@@ -133,7 +133,7 @@ import {
 import ModelSettingsModal from '../components/ModelSettingsModal.vue';
 import HistoryPanel from '../components/HistoryPanel.vue';
 import ToastNotification from '../components/ToastNotification.vue';
-import { hasModelConfig } from '../utils/storage';
+import { hasAnyConfig } from '../utils/storage';
 
 const router = useRouter();
 
@@ -169,18 +169,15 @@ const examples = [
 ];
 
 onMounted(async () => {
-  // 检查是否已配置模型，如果没有则显示设置弹窗
-  if (!hasModelConfig()) {
-    // 检查官方配置是否可用
-    const officialConfig = await getOfficialConfig();
-    
-    // 只有在官方配置也不可用时才弹窗提示
-    if (!officialConfig) {
-      setTimeout(() => {
-        showSettings.value = true;
-        showToast('info', '欢迎使用', '请先配置大模型 API 以开始使用');
-      }, 500);
-    }
+  // 检查是否有可用的配置（用户配置或官方配置）
+  const hasConfig = await hasAnyConfig();
+  
+  // 只有在没有任何配置时才弹窗提示
+  if (!hasConfig) {
+    setTimeout(() => {
+      showSettings.value = true;
+      showToast('info', '欢迎使用', '请先配置大模型 API 以开始使用');
+    }, 500);
   }
 });
 
@@ -188,11 +185,12 @@ function useExample(text) {
   description.value = text;
 }
 
-function handleGenerate() {
+async function handleGenerate() {
   if (!description.value.trim()) return;
 
-  // 检查是否已配置模型
-  if (!hasModelConfig()) {
+  // 检查是否已配置模型（用户配置或官方配置）
+  const hasConfig = await hasAnyConfig();
+  if (!hasConfig) {
     showSettings.value = true;
     showToast('warning', '请先配置模型', '需要配置大模型 API 才能生成页面');
     return;
