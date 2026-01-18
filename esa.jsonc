@@ -1,0 +1,23 @@
+{
+  // 项目名称
+  "name": "ai-html-generator",
+  
+  // 边缘函数入口文件（用于HTML存储）
+  "entry": "./edge-functions/html-storage.js",
+  
+  // 安装命令
+  "installCommand": "npm install",
+  
+  // 构建命令
+  "buildCommand": "npm run build",
+  
+  // 静态资源配置
+  "assets": {
+    // 构建产物目录
+    "directory": "./dist",
+    
+    // 单页应用模式：未匹配到静态资源时返回 index.html
+    // 适用于 Vue Router 的 history 模式
+    "notFoundStrategy": "singlePageApplication"
+  }
+}
