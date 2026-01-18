@@ -4,7 +4,9 @@
 
 import { v4 as uuidv4 } from 'uuid';
 
-const ESA_DOMAIN = import.meta.env.VITE_ESA_DOMAIN || 'https://your-esa-domain.com';
+// 线上环境使用相对路径，会自动路由到边缘函数
+// 本地开发可通过 VITE_ESA_DOMAIN 环境变量指定测试域名
+const ESA_DOMAIN = import.meta.env.VITE_ESA_DOMAIN || '';
 
 /**
  * 发布 HTML 到边缘存储
