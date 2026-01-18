@@ -1,4 +1,4 @@
-import ARC4 from 'arc4';
+import CryptoJS from 'crypto-js';
 
 const OFFICIAL_CONFIG_KEY = 'config';
 let cachedConfig = null;
@@ -6,21 +6,14 @@ let officialConfigAvailable = null; // null: 未检测, true: 可用, false: 不
 
 /**
  * RC4 解密
- * @param {string} encrypted - base64 编码的加密字符串
+ * @param {string} encrypted - 加密的 base64 字符串
  * @param {string} key - RC4 密钥
  * @returns {string} 解密后的字符串
  */
 function rc4Decrypt(encrypted, key) {
   try {
-    // 从 base64 解码
-    const encryptedBuffer = Buffer.from(encrypted, 'base64');
-    
-    // RC4 解密
-    const arc4 = new ARC4(key);
-    const decryptedBuffer = arc4.decodeBuffer(encryptedBuffer);
-    
-    // 转换为字符串
-    const decrypted = decryptedBuffer.toString('utf8');
+    // 使用 CryptoJS RC4 解密
+    const decrypted = CryptoJS.RC4.decrypt(encrypted, key).toString(CryptoJS.enc.Utf8);
     return decrypted;
   } catch (error) {
     console.error('RC4 解密失败:', error);
