@@ -9,6 +9,19 @@ import { v4 as uuidv4 } from 'uuid';
 const ESA_DOMAIN = import.meta.env.VITE_ESA_DOMAIN || '';
 
 /**
+ * 获取基础域名
+ * @returns {string} 基础域名（用于构建完整URL）
+ */
+function getBaseDomain() {
+  // 如果配置了 ESA_DOMAIN，直接使用
+  if (ESA_DOMAIN) {
+    return ESA_DOMAIN;
+  }
+  // 否则使用当前网页的 origin
+  return window.location.origin;
+}
+
+/**
  * 发布 HTML 到边缘存储
  * @param {string} html - HTML 内容
  * @param {string} title - 页面标题（可选）
@@ -40,8 +53,9 @@ export async function publishHTML(html, title = '') {
 
     const data = await response.json();
 
-    // 构建访问 URL
-    const pageUrl = `${ESA_DOMAIN}/pages/${uuid}`;
+    // 构建访问 URL（如果 ESA_DOMAIN 为空，使用当前网页的 host）
+    const baseUrl = getBaseDomain();
+    const pageUrl = `${baseUrl}/pages/${uuid}`;
 
     return {
       success: true,
@@ -108,5 +122,5 @@ export function isESAConfigured() {
  * @returns {string} ESA 域名
  */
 export function getESADomain() {
-  return ESA_DOMAIN;
+  return getBaseDomain();
 }
