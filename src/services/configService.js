@@ -2,6 +2,7 @@ import RC4 from 'rc4';
 
 const OFFICIAL_CONFIG_KEY = 'config';
 let cachedConfig = null;
+let officialConfigAvailable = null; // null: 未检测, true: 可用, false: 不可用
 
 /**
  * RC4 解密
@@ -61,6 +62,7 @@ export async function getOfficialConfig() {
     if (!rc4Key) {
       console.warn('未配置 RC4 密钥，无法解密官方配置');
       cachedConfig = null;
+      officialConfigAvailable = false;
       return null;
     }
 
@@ -68,6 +70,7 @@ export async function getOfficialConfig() {
     const encryptedConfig = await fetchEncryptedConfig();
     if (!encryptedConfig) {
       cachedConfig = null;
+      officialConfigAvailable = false;
       return null;
     }
 
@@ -79,6 +82,7 @@ export async function getOfficialConfig() {
     if (!config.apiUrl || !config.apiKey || !config.modelName) {
       console.warn('官方配置格式不正确');
       cachedConfig = null;
+      officialConfigAvailable = false;
       return null;
     }
 
@@ -87,11 +91,13 @@ export async function getOfficialConfig() {
       apiKey: config.apiKey,
       modelName: config.modelName
     };
+    officialConfigAvailable = true;
 
     return cachedConfig;
   } catch (error) {
     console.error('解析官方配置失败:', error);
     cachedConfig = null;
+    officialConfigAvailable = false;
     return null;
   }
 }
@@ -109,8 +115,24 @@ export function isUsingOfficialAPI() {
 }
 
 /**
+ * 检查官方配置是否可用
+ * @returns {Promise<boolean>} 官方配置是否可用
+ */
+export async function isOfficialConfigAvailable() {
+  // 如果已经检测过，直接返回结果
+  if (officialConfigAvailable !== null) {
+    return officialConfigAvailable;
+  }
+  
+  // 尝试获取配置以确定可用性
+  const config = await getOfficialConfig();
+  return officialConfigAvailable === true;
+}
+
+/**
  * 清除缓存的官方配置（用于刷新配置）
  */
 export function clearOfficialConfigCache() {
   cachedConfig = null;
+  officialConfigAvailable = null;
 }

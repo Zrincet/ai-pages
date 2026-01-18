@@ -45,8 +45,8 @@
 
             <!-- Content -->
             <div class="px-8 py-6 space-y-6">
-              <!-- 使用官方API选项 -->
-              <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <!-- 使用官方API选项（仅在官方配置可用时显示） -->
+              <div v-if="officialAPIAvailable" class="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <label class="flex items-center gap-3 cursor-pointer">
                   <input
                     v-model="useOfficialAPI"
@@ -231,6 +231,7 @@ import {
 } from '@heroicons/vue/24/outline';
 import { testModelConnection } from '../services/aiService';
 import { saveModelConfig, getModelConfig } from '../utils/storage';
+import { isOfficialConfigAvailable } from '../services/configService';
 
 const props = defineProps({
   show: {
@@ -274,6 +275,7 @@ const showApiKey = ref(false);
 const testing = ref(false);
 const testResult = ref(null);
 const useOfficialAPI = ref(false);
+const officialAPIAvailable = ref(false);
 
 const form = ref({
   apiUrl: '',
@@ -290,14 +292,16 @@ const isFormValid = computed(() => {
 });
 
 // 监听 show 变化，加载已保存的配置
-watch(() => props.show, (newValue) => {
+watch(() => props.show, async (newValue) => {
   if (newValue) {
-    loadConfig();
+    // 检查官方配置是否可用
+    officialAPIAvailable.value = await isOfficialConfigAvailable();
+    await loadConfig();
     testResult.value = null;
   }
 });
 
-function loadConfig() {
+async function loadConfig() {
   const config = getModelConfig();
   if (config) {
     form.value = { ...config };
@@ -308,8 +312,8 @@ function loadConfig() {
     );
     selectedPreset.value = matchedPreset ? matchedPreset.name : '';
   } else {
-    // 没有配置，默认使用官方API
-    useOfficialAPI.value = true;
+    // 没有配置，如果官方API可用则默认使用
+    useOfficialAPI.value = officialAPIAvailable.value;
   }
 }
 

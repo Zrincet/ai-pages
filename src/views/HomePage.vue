@@ -121,6 +121,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { getOfficialConfig } from '../services/configService';
 import {
   SparklesIcon,
   Cog6ToothIcon,
@@ -167,13 +168,19 @@ const examples = [
   }
 ];
 
-onMounted(() => {
+onMounted(async () => {
   // 检查是否已配置模型，如果没有则显示设置弹窗
   if (!hasModelConfig()) {
-    setTimeout(() => {
-      showSettings.value = true;
-      showToast('info', '欢迎使用', '请先配置大模型 API 以开始使用');
-    }, 500);
+    // 检查官方配置是否可用
+    const officialConfig = await getOfficialConfig();
+    
+    // 只有在官方配置也不可用时才弹窗提示
+    if (!officialConfig) {
+      setTimeout(() => {
+        showSettings.value = true;
+        showToast('info', '欢迎使用', '请先配置大模型 API 以开始使用');
+      }, 500);
+    }
   }
 });
 
