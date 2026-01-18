@@ -93,7 +93,7 @@ import PreviewPanel from '../components/PreviewPanel.vue';
 import PublishSuccessModal from '../components/PublishSuccessModal.vue';
 import ToastNotification from '../components/ToastNotification.vue';
 import { streamChat } from '../services/aiService';
-import { publishHTML } from '../services/esaService';
+import { publishHTML, getHTML } from '../services/esaService';
 import { extractHTMLFromText, checkHTMLSize } from '../utils/htmlExtractor';
 import { buildInitialPrompt, SYSTEM_PROMPT, extractPageTitle } from '../utils/prompts';
 import { saveCurrentChat, getCurrentChat, clearCurrentChat, saveToHistory, removeFromHistory, saveSessionId, getSessionId } from '../utils/storage';
