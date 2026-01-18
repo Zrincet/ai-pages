@@ -110,6 +110,7 @@ const publishing = ref(false);
 const showPublishSuccess = ref(false);
 const publishedUrl = ref('');
 const sessionId = ref(getSessionId() || Date.now()); // 尝试从存储恢复，否则生成新ID
+const currentUUID = ref(null); // 当前页面的 UUID（草稿或已发布）
 const toast = ref({
   show: false,
   type: 'info',
@@ -122,18 +123,20 @@ let currentStreamController = null;
 onMounted(() => {
   // 检查是否有初始提示词
   if (route.query.prompt) {
+    // 新对话，使用草稿 UUID
+    currentUUID.value = `draft-${sessionId.value}`;
     startInitialChat(route.query.prompt);
   } else if (route.query.uuid) {
-    // TODO: 从历史记录加载
+    // 从历史记录加载
+    currentUUID.value = route.query.uuid;
     loadFromHistory(route.query.uuid);
   } else {
-    // 尝试加载上次的对话
-    const savedChat = getCurrentChat();
+    // 尝试加载上次的对话（草稿）
+    currentUUID.value = `draft-${sessionId.value}`;
+    const savedChat = getCurrentChat(currentUUID.value);
     if (savedChat && savedChat.length > 0) {
       messages.value = savedChat;
       updateHTMLFromMessages();
-      // 加载已有会话时不重置sessionId，保持草稿UUID一致
-      // sessionId 保持为初始值
     }
   }
 });
@@ -146,7 +149,10 @@ let lastSavedHTML = ''; // 跟踪上次保存的HTML
 saveSessionId(sessionId.value);
 
 watch(messages, (newMessages) => {
-  saveCurrentChat(newMessages);
+  // 使用 currentUUID 保存聊天记录
+  if (currentUUID.value) {
+    saveCurrentChat(newMessages, currentUUID.value);
+  }
   
   // 如果有消息且有HTML内容，且HTML有变化，保存到历史记录
   if (newMessages.length > 0 && currentHTML.value && currentHTML.value !== lastSavedHTML) {
@@ -183,38 +189,48 @@ async function loadFromHistory(uuid) {
   try {
     showToast('info', '加载中', '正在加载历史记录...');
     
-    // 从 ESA 获取 HTML
-    const html = await getHTML(uuid);
+    // 从 localStorage 加载聊天记录
+    const savedChat = getCurrentChat(uuid);
     
-    if (!html) {
-      showToast('error', '加载失败', '未找到该历史记录');
-      return;
-    }
-    
-    // 解析 HTML 中的聊天记录
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const chatDataElement = doc.getElementById('chat-data');
-    
-    if (chatDataElement) {
-      try {
-        const chatData = JSON.parse(chatDataElement.textContent);
-        messages.value = chatData.messages || [];
-        currentHTML.value = html;
-        
-        showToast('success', '加载成功', '历史记录已恢复');
-      } catch (e) {
-        console.error('解析聊天数据失败:', e);
-        // 即使没有聊天记录，也显示 HTML
-        currentHTML.value = html;
-        messages.value = [];
-        showToast('warning', '部分加载', 'HTML 已加载，但无法恢复聊天记录');
-      }
+    if (savedChat && savedChat.length > 0) {
+      messages.value = savedChat;
+      // 从消息中恢复 HTML
+      updateHTMLFromMessages();
+      showToast('success', '加载成功', '历史记录已恢复');
     } else {
-      // 没有聊天数据，只显示 HTML
-      currentHTML.value = html;
-      messages.value = [];
-      showToast('info', '加载完成', 'HTML 已加载');
+      // 如果 localStorage 没有，尝试从 ESA 获取（针对已发布的页面）
+      if (!uuid.startsWith('draft-')) {
+        const html = await getHTML(uuid);
+        
+        if (html) {
+          currentHTML.value = html;
+          // 解析 HTML 中的聊天记录
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const chatDataElement = doc.getElementById('chat-data');
+          
+          if (chatDataElement) {
+            try {
+              const chatData = JSON.parse(chatDataElement.textContent);
+              messages.value = chatData.messages || [];
+              // 保存到 localStorage 以便下次快速加载
+              if (messages.value.length > 0) {
+                saveCurrentChat(messages.value, uuid);
+              }
+              showToast('success', '加载成功', '历史记录已恢复');
+            } catch (e) {
+              console.error('解析聊天数据失败:', e);
+              showToast('warning', '部分加载', 'HTML 已加载，但无法恢复聊天记录');
+            }
+          } else {
+            showToast('info', '加载完成', 'HTML 已加载');
+          }
+        } else {
+          showToast('error', '加载失败', '未找到该历史记录');
+        }
+      } else {
+        showToast('info', '无聊天记录', '该草稿暂无聊天记录');
+      }
     }
   } catch (error) {
     console.error('加载历史记录失败:', error);
@@ -371,15 +387,20 @@ function startNewChat() {
     currentStreamController?.abort();
   }
   
+  // 清除当前 UUID 的聊天记录
+  if (currentUUID.value) {
+    clearCurrentChat(currentUUID.value);
+  }
+  
   messages.value = [];
   currentHTML.value = '';
   streamingContent.value = '';
   errorMessage.value = '';
   sessionId.value = Date.now(); // 重置会话 ID
+  currentUUID.value = `draft-${sessionId.value}`; // 更新当前 UUID
   saveSessionId(sessionId.value); // 保存新sessionId
   draftUUID = `draft-${sessionId.value}`; // 重置草稿UUID
   lastSavedHTML = ''; // 重置保存状态
-  clearCurrentChat();
   
   showToast('info', '新对话', '已开始新的对话');
 }

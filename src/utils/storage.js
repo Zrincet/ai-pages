@@ -5,8 +5,18 @@
 const STORAGE_KEYS = {
   MODEL_CONFIG: 'ai_html_generator_model_config',
   HISTORY: 'ai_html_generator_history',
-  CURRENT_CHAT: 'ai_html_generator_current_chat'
+  CURRENT_CHAT: 'ai_html_generator_current_chat',
+  SESSION_ID: 'ai_html_generator_session_id'
 };
+
+/**
+ * 根据 uuid 获取聊天记录的 key
+ * @param {string} uuid - 页面的 uuid
+ * @returns {string} localStorage key
+ */
+function getChatKey(uuid) {
+  return `${STORAGE_KEYS.CURRENT_CHAT}_${uuid}`;
+}
 
 /**
  * 保存模型配置
@@ -152,10 +162,12 @@ export function clearHistory() {
 /**
  * 保存当前对话记录
  * @param {array} messages - 消息数组
+ * @param {string} uuid - 页面的 uuid（可选）
  */
-export function saveCurrentChat(messages) {
+export function saveCurrentChat(messages, uuid = null) {
   try {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_CHAT, JSON.stringify(messages));
+    const key = uuid ? getChatKey(uuid) : STORAGE_KEYS.CURRENT_CHAT;
+    localStorage.setItem(key, JSON.stringify(messages));
     return true;
   } catch (error) {
     console.error('保存对话记录失败:', error);
@@ -165,11 +177,13 @@ export function saveCurrentChat(messages) {
 
 /**
  * 获取当前对话记录
+ * @param {string} uuid - 页面的 uuid（可选）
  * @returns {array} 消息数组
  */
-export function getCurrentChat() {
+export function getCurrentChat(uuid = null) {
   try {
-    const chat = localStorage.getItem(STORAGE_KEYS.CURRENT_CHAT);
+    const key = uuid ? getChatKey(uuid) : STORAGE_KEYS.CURRENT_CHAT;
+    const chat = localStorage.getItem(key);
     return chat ? JSON.parse(chat) : [];
   } catch (error) {
     console.error('读取对话记录失败:', error);
@@ -179,11 +193,15 @@ export function getCurrentChat() {
 
 /**
  * 清空当前对话记录
+ * @param {string} uuid - 页面的 uuid（可选）
  */
-export function clearCurrentChat() {
+export function clearCurrentChat(uuid = null) {
   try {
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_CHAT);
-    localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+    const key = uuid ? getChatKey(uuid) : STORAGE_KEYS.CURRENT_CHAT;
+    localStorage.removeItem(key);
+    if (!uuid) {
+      localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+    }
     return true;
   } catch (error) {
     console.error('清空对话记录失败:', error);

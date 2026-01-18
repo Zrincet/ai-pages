@@ -8,7 +8,7 @@
             <SparklesIcon class="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 class="text-2xl font-bold text-gray-900">AI HTML Generator</h1>
+            <h1 class="text-2xl font-bold text-gray-900">AI Pages</h1>
             <p class="text-sm text-gray-600">通过自然语言描述，生成优雅的单页应用</p>
           </div>
         </div>
