@@ -1,4 +1,4 @@
-# AI HTML Generator
+# AI Pages - 基于大模型和 ESA Pages 构建
 
 基于 Vue3 + Vite + Tailwind CSS 的大模型 Agent HTML 生成器，通过自然语言描述生成优雅的单页应用，并通过阿里云 ESA 边缘存储发布。
 
@@ -48,8 +48,11 @@ cp .env.example .env
 编辑 `.env` 文件：
 
 ```env
-# 阿里云 ESA 边缘函数域名
+# 阿里云 ESA 边缘函数域名（可选，为空时使用当前域名）
 VITE_ESA_DOMAIN=https://your-esa-domain.com
+
+# RC4 解密密钥（用于解密官方 API 配置）
+VITE_RC4_KEY=your-rc4-key-here
 ```
 
 ### 4. 启动开发服务器
@@ -62,15 +65,40 @@ npm run dev
 
 ### 5. 配置大模型
 
-首次使用时，点击右上角设置图标，配置：
-- API 地址（如 https://api.openai.com/v1）
-- API Key
-- 模型名称（如 gpt-4o）
+首次使用时，点击右上角设置图标，可以选择：
+
+#### 方式一：使用官方 API（推荐）
+- 勾选"使用官方 API"选项
+- 系统将自动使用官方配置的 API 服务
+- 无需手动配置，开箱即用
+
+#### 方式二：自定义 API
+- 不勾选"使用官方 API"
+- 手动配置：
+  - API 地址（如 https://api.openai.com/v1）
+  - API Key
+  - 模型名称（如 gpt-4o）
 
 支持的预设：
 - OpenAI GPT-4 / GPT-3.5
 - Deepseek
 - OpenAI Compatible (如 Ollama 本地模型)
+
+### 6. 官方配置说明
+
+系统支持从边缘存储获取加密的官方 API 配置：
+
+1. **边缘存储设置**：在 ESA EdgeKV 中存储 key 为 `config` 的加密配置
+2. **配置格式**：使用 RC4 加密后的 JSON 字符串
+   ```json
+   {
+     "apiUrl": "https://api.example.com/v1",
+     "apiKey": "sk-...",
+     "modelName": "gpt-4o"
+   }
+   ```
+3. **密钥配置**：在 `.env` 文件中设置 `VITE_RC4_KEY` 用于解密
+4. **使用方式**：用户勾选"使用官方 API"即可自动使用，无需查看具体配置
 
 ## 📚 部署指南
 

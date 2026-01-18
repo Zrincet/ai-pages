@@ -179,9 +179,47 @@ function startInitialChat(prompt) {
   sendMessage(userMessage);
 }
 
-function loadFromHistory(uuid) {
-  // TODO: 从 ESA 加载 HTML 并恢复对话
-  showToast('info', '加载中', '正在加载历史记录...');
+async function loadFromHistory(uuid) {
+  try {
+    showToast('info', '加载中', '正在加载历史记录...');
+    
+    // 从 ESA 获取 HTML
+    const html = await getHTML(uuid);
+    
+    if (!html) {
+      showToast('error', '加载失败', '未找到该历史记录');
+      return;
+    }
+    
+    // 解析 HTML 中的聊天记录
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const chatDataElement = doc.getElementById('chat-data');
+    
+    if (chatDataElement) {
+      try {
+        const chatData = JSON.parse(chatDataElement.textContent);
+        messages.value = chatData.messages || [];
+        currentHTML.value = html;
+        
+        showToast('success', '加载成功', '历史记录已恢复');
+      } catch (e) {
+        console.error('解析聊天数据失败:', e);
+        // 即使没有聊天记录，也显示 HTML
+        currentHTML.value = html;
+        messages.value = [];
+        showToast('warning', '部分加载', 'HTML 已加载，但无法恢复聊天记录');
+      }
+    } else {
+      // 没有聊天数据，只显示 HTML
+      currentHTML.value = html;
+      messages.value = [];
+      showToast('info', '加载完成', 'HTML 已加载');
+    }
+  } catch (error) {
+    console.error('加载历史记录失败:', error);
+    showToast('error', '加载失败', error.message || '加载历史记录时出错');
+  }
 }
 
 async function handleSendMessage(content) {

@@ -4,6 +4,23 @@
 
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { getModelConfig } from '../utils/storage';
+import { getOfficialConfig } from './configService';
+
+/**
+ * 获取有效的模型配置（优先用户配置，其次官方配置）
+ * @returns {Promise<object|null>} 配置对象或 null
+ */
+async function getEffectiveConfig() {
+  // 先尝试获取用户配置
+  const userConfig = getModelConfig();
+  if (userConfig && userConfig.apiUrl && userConfig.apiKey && userConfig.modelName) {
+    return userConfig;
+  }
+
+  // 如果没有用户配置，尝试获取官方配置
+  const officialConfig = await getOfficialConfig();
+  return officialConfig;
+}
 
 /**
  * 发送流式聊天请求
@@ -14,7 +31,7 @@ import { getModelConfig } from '../utils/storage';
  * @returns {object} 包含 abort 方法的对象
  */
 export async function streamChat(messages, onMessage, onError, onComplete) {
-  const config = getModelConfig();
+  const config = await getEffectiveConfig();
   
   if (!config || !config.apiUrl || !config.apiKey || !config.modelName) {
     onError(new Error('模型配置不完整，请先配置模型'));

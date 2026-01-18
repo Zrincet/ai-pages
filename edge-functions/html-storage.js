@@ -26,9 +26,14 @@ async function handleRequest(request) {
   }
 
   try {
-    // POST /api/storage - 存储 HTML
+    // POST /api/storage - 存储 HTML 或配置
     if (method === 'POST' && path === '/api/storage') {
       return await handleStorage(request);
+    }
+
+    // GET /api/storage?key=xxx - 获取配置或数据
+    if (method === 'GET' && path === '/api/storage') {
+      return await handleGetStorage(url);
     }
 
     // GET /pages/{uuid} - 读取 HTML
@@ -96,6 +101,69 @@ async function handleStorage(request) {
     console.error('Storage error:', error);
     return new Response(JSON.stringify({ 
       error: error.message || 'Failed to store HTML' 
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...getCORSHeaders()
+      }
+    });
+  }
+}
+
+/**
+ * 处理获取存储数据请求（配置等）
+ */
+async function handleGetStorage(url) {
+  try {
+    const key = url.searchParams.get('key');
+
+    if (!key) {
+      return new Response(JSON.stringify({ 
+        error: 'Missing required parameter: key' 
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...getCORSHeaders()
+        }
+      });
+    }
+
+    // 创建 EdgeKV 实例
+    const edgeKV = new EdgeKV({ namespace: NAMESPACE });
+
+    // 读取数据
+    const value = await edgeKV.get(key, { type: 'text' });
+
+    if (value === undefined || value === null) {
+      return new Response(JSON.stringify({ 
+        error: 'Key not found' 
+      }), {
+        status: 404,
+        headers: {
+          'Content-Type': 'application/json',
+          ...getCORSHeaders()
+        }
+      });
+    }
+
+    // 返回数据
+    return new Response(JSON.stringify({ 
+      key,
+      value
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=300',
+        ...getCORSHeaders()
+      }
+    });
+  } catch (error) {
+    console.error('Get storage error:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Failed to retrieve data' 
     }), {
       status: 500,
       headers: {

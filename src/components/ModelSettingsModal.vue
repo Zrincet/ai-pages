@@ -45,125 +45,152 @@
 
             <!-- Content -->
             <div class="px-8 py-6 space-y-6">
-              <!-- 预设模型选择 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  预设模型
-                </label>
-                <select
-                  v-model="selectedPreset"
-                  @change="applyPreset"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                >
-                  <option value="">自定义配置</option>
-                  <option
-                    v-for="preset in presets"
-                    :key="preset.name"
-                    :value="preset.name"
-                  >
-                    {{ preset.name }}
-                  </option>
-                </select>
-              </div>
-
-              <!-- API 地址 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  API 地址 *
-                </label>
-                <input
-                  v-model="form.apiUrl"
-                  type="url"
-                  placeholder="https://api.openai.com/v1"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                />
-                <p class="mt-1 text-xs text-gray-500">
-                  OpenAI 标准 API 接口地址（不包含 /chat/completions）
-                </p>
-              </div>
-
-              <!-- API Key -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  API Key *
-                </label>
-                <div class="relative">
+              <!-- 使用官方API选项 -->
+              <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <label class="flex items-center gap-3 cursor-pointer">
                   <input
-                    v-model="form.apiKey"
-                    :type="showApiKey ? 'text' : 'password'"
-                    placeholder="sk-..."
-                    class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all font-mono text-sm"
-                  />
-                  <button
-                    @click="showApiKey = !showApiKey"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <EyeIcon v-if="!showApiKey" class="w-5 h-5" />
-                    <EyeSlashIcon v-else class="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-
-              <!-- 模型名称 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  模型名称 *
-                </label>
-                <input
-                  v-model="form.modelName"
-                  type="text"
-                  placeholder="gpt-4o"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                />
-              </div>
-
-              <!-- 测试连接按钮 -->
-              <button
-                @click="testConnection"
-                :disabled="testing || !isFormValid"
-                class="w-full py-3 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
-              >
-                <SignalIcon v-if="!testing" class="w-5 h-5" />
-                <ArrowPathIcon v-else class="w-5 h-5 animate-spin" />
-                {{ testing ? '测试中...' : '测试连接' }}
-              </button>
-
-              <!-- 测试结果 -->
-              <div
-                v-if="testResult"
-                :class="[
-                  'p-4 rounded-xl border',
-                  testResult.success
-                    ? 'bg-green-50 border-green-200'
-                    : 'bg-red-50 border-red-200'
-                ]"
-              >
-                <div class="flex items-start gap-2">
-                  <CheckCircleIcon
-                    v-if="testResult.success"
-                    class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
-                  />
-                  <XCircleIcon
-                    v-else
-                    class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+                    v-model="useOfficialAPI"
+                    type="checkbox"
+                    class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                   />
                   <div class="flex-1">
-                    <p
-                      :class="[
-                        'text-sm font-medium',
-                        testResult.success ? 'text-green-800' : 'text-red-800'
-                      ]"
+                    <div class="text-sm font-medium text-blue-900">使用官方 API</div>
+                    <div class="text-xs text-blue-700">使用系统提供的官方 API 配置，无需手动设置</div>
+                  </div>
+                </label>
+              </div>
+
+              <!-- 自定义配置区域（使用官方API时隐藏） -->
+              <div v-if="!useOfficialAPI" class="space-y-6">
+                <!-- 预设模型选择 -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    预设模型
+                  </label>
+                  <select
+                    v-model="selectedPreset"
+                    @change="applyPreset"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  >
+                    <option value="">自定义配置</option>
+                    <option
+                      v-for="preset in presets"
+                      :key="preset.name"
+                      :value="preset.name"
                     >
-                      {{ testResult.message }}
-                    </p>
-                    <p
-                      v-if="testResult.modelInfo"
-                      class="text-xs text-green-700 mt-1"
+                      {{ preset.name }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- API 地址 -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    API 地址 *
+                  </label>
+                  <input
+                    v-model="form.apiUrl"
+                    type="url"
+                    placeholder="https://api.openai.com/v1"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  />
+                  <p class="mt-1 text-xs text-gray-500">
+                    OpenAI 标准 API 接口地址（不包含 /chat/completions）
+                  </p>
+                </div>
+
+                <!-- API Key -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    API Key *
+                  </label>
+                  <div class="relative">
+                    <input
+                      v-model="form.apiKey"
+                      :type="showApiKey ? 'text' : 'password'"
+                      placeholder="sk-..."
+                      class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all font-mono text-sm"
+                    />
+                    <button
+                      @click="showApiKey = !showApiKey"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      模型: {{ testResult.modelInfo.model }}
-                    </p>
+                      <EyeIcon v-if="!showApiKey" class="w-5 h-5" />
+                      <EyeSlashIcon v-else class="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
+
+                <!-- 模型名称 -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    模型名称 *
+                  </label>
+                  <input
+                    v-model="form.modelName"
+                    type="text"
+                    placeholder="gpt-4o"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <!-- 测试连接按钮 -->
+                <button
+                  @click="testConnection"
+                  :disabled="testing || !isFormValid"
+                  class="w-full py-3 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
+                >
+                  <SignalIcon v-if="!testing" class="w-5 h-5" />
+                  <ArrowPathIcon v-else class="w-5 h-5 animate-spin" />
+                  {{ testing ? '测试中...' : '测试连接' }}
+                </button>
+
+                <!-- 测试结果 -->
+                <div
+                  v-if="testResult"
+                  :class="[
+                    'p-4 rounded-xl border',
+                    testResult.success
+                      ? 'bg-green-50 border-green-200'
+                      : 'bg-red-50 border-red-200'
+                  ]"
+                >
+                  <div class="flex items-start gap-2">
+                    <CheckCircleIcon
+                      v-if="testResult.success"
+                      class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
+                    />
+                    <XCircleIcon
+                      v-else
+                      class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+                    />
+                    <div class="flex-1">
+                      <p
+                        :class="[
+                          'text-sm font-medium',
+                          testResult.success ? 'text-green-800' : 'text-red-800'
+                        ]"
+                      >
+                        {{ testResult.message }}
+                      </p>
+                      <p
+                        v-if="testResult.modelInfo"
+                        class="text-xs text-green-700 mt-1"
+                      >
+                        模型: {{ testResult.modelInfo.model }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 使用官方API时显示的提示 -->
+              <div v-else class="text-center py-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                  <CheckCircleIcon class="w-8 h-8 text-blue-600" />
+                </div>
+                <p class="text-gray-700 font-medium">已配置官方 API</p>
+                <p class="text-sm text-gray-500 mt-1">系统将使用官方提供的 API 服务</p>
               </div>
             </div>
 
@@ -246,6 +273,7 @@ const selectedPreset = ref('');
 const showApiKey = ref(false);
 const testing = ref(false);
 const testResult = ref(null);
+const useOfficialAPI = ref(false);
 
 const form = ref({
   apiUrl: '',
@@ -254,6 +282,10 @@ const form = ref({
 });
 
 const isFormValid = computed(() => {
+  // 如果使用官方API，则认为是有效的
+  if (useOfficialAPI.value) {
+    return true;
+  }
   return form.value.apiUrl && form.value.apiKey && form.value.modelName;
 });
 
@@ -269,11 +301,15 @@ function loadConfig() {
   const config = getModelConfig();
   if (config) {
     form.value = { ...config };
+    useOfficialAPI.value = false;
     // 检查是否匹配预设
     const matchedPreset = presets.find(
       p => p.apiUrl === config.apiUrl && p.modelName === config.modelName
     );
     selectedPreset.value = matchedPreset ? matchedPreset.name : '';
+  } else {
+    // 没有配置，默认使用官方API
+    useOfficialAPI.value = true;
   }
 }
 
@@ -314,8 +350,17 @@ async function testConnection() {
 function saveConfig() {
   if (!isFormValid.value) return;
   
-  saveModelConfig(form.value);
-  emit('saved', form.value);
+  if (useOfficialAPI.value) {
+    // 清除用户配置，使用官方API
+    localStorage.removeItem('apiUrl');
+    localStorage.removeItem('apiKey');
+    localStorage.removeItem('modelName');
+  } else {
+    // 保存用户自定义配置
+    saveModelConfig(form.value);
+  }
+  
+  emit('saved', useOfficialAPI.value ? null : form.value);
   closeModal();
 }
 

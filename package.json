@@ -1,8 +1,9 @@
 {
-  "name": "simplehtml",
+  "name": "ai-pages",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "AI Pages - 基于大模型和 ESA Pages 构建",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,6 +13,7 @@
     "@heroicons/vue": "^2.2.0",
     "@microsoft/fetch-event-source": "^2.0.1",
     "marked": "^17.0.1",
+    "rc4": "^0.1.5",
     "uuid": "^13.0.0",
     "vue": "^3.5.24",
     "vue-router": "^4.6.4"
