@@ -56,6 +56,7 @@ export async function streamChat(messages, onMessage, onError, onComplete, onRea
         temperature: 0.7,
       }),
       signal: controller.signal,
+      openWhenHidden: true,
 
       async onopen(response) {
         if (response.ok) {
