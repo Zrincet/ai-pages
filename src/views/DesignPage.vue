@@ -394,8 +394,17 @@ async function handlePublish() {
       publishedUrl.value = result.url;
       showPublishSuccess.value = true;
       
-      // 移除草稿记录
+      // 将聊天记录保存到正式 UUID 下
+      saveCurrentChat(messages.value, result.uuid);
+      
+      // 清除草稿聊天记录
+      clearCurrentChat(draftUUID);
+      
+      // 移除草稿历史记录
       removeFromHistory(draftUUID);
+      
+      // 更新当前 UUID 为正式 UUID
+      currentUUID.value = result.uuid;
       
       // 保存到历史记录（更新为正式UUID）
       saveToHistory({
