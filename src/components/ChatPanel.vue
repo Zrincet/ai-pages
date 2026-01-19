@@ -22,10 +22,36 @@
           ]"
         >
           <div v-if="message.role === 'assistant'">
+            <!-- 思考内容折叠展示 -->
+            <details v-if="message.reasoning" class="mb-3">
+              <summary class="flex items-center gap-2 cursor-pointer text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+                <span>思考过程</span>
+              </summary>
+              <div class="mt-2 pl-6 border-l-2 border-gray-200 text-sm text-gray-600 whitespace-pre-wrap">{{ message.reasoning }}</div>
+            </details>
             <!-- 渲染文本和代码块 -->
             <div v-html="renderMessageContent(message.content)"></div>
           </div>
           <div v-else class="whitespace-pre-wrap">{{ message.content }}</div>
+        </div>
+      </div>
+
+      <!-- Streaming Reasoning -->
+      <div
+        v-if="streamingReasoning && isStreaming"
+        class="flex justify-start"
+      >
+        <div class="max-w-[80%] bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+          <div class="flex items-center gap-2 text-sm text-amber-700 mb-2">
+            <svg class="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+            </svg>
+            <span>正在思考...</span>
+          </div>
+          <div class="text-sm text-amber-800 whitespace-pre-wrap max-h-40 overflow-y-auto">{{ streamingReasoning }}</div>
         </div>
       </div>
 
@@ -114,6 +140,10 @@ const props = defineProps({
     default: false
   },
   streamingContent: {
+    type: String,
+    default: ''
+  },
+  streamingReasoning: {
     type: String,
     default: ''
   },

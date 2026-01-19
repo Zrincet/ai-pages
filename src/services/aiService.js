@@ -28,14 +28,15 @@ async function getEffectiveConfig() {
  * @param {function} onMessage - 接收消息片段的回调函数
  * @param {function} onError - 错误回调函数
  * @param {function} onComplete - 完成回调函数
+ * @param {function} onReasoning - 接收思考内容片段的回调函数（可选）
  * @returns {object} 包含 abort 方法的对象
  */
-export async function streamChat(messages, onMessage, onError, onComplete) {
+export async function streamChat(messages, onMessage, onError, onComplete, onReasoning = null) {
   const config = await getEffectiveConfig();
-  
+
   if (!config || !config.apiUrl || !config.apiKey || !config.modelName) {
     onError(new Error('模型配置不完整，请先配置模型'));
-    return { abort: () => {} };
+    return { abort: () => { } };
   }
 
   const controller = new AbortController();
@@ -55,12 +56,12 @@ export async function streamChat(messages, onMessage, onError, onComplete) {
         temperature: 0.7,
       }),
       signal: controller.signal,
-      
+
       async onopen(response) {
         if (response.ok) {
           return; // 成功，继续处理
         }
-        
+
         if (response.status === 401) {
           throw new Error('API Key 无效，请检查配置');
         } else if (response.status === 429) {
@@ -72,24 +73,30 @@ export async function streamChat(messages, onMessage, onError, onComplete) {
           throw new Error(`请求失败: ${response.status} ${errorText}`);
         }
       },
-      
+
       onmessage(event) {
         if (isAborted) return;
-        
+
         // OpenAI 使用 [DONE] 标记流结束
         if (event.data === '[DONE]') {
           onComplete();
           return;
         }
-        
+
         try {
           const data = JSON.parse(event.data);
-          const content = data.choices?.[0]?.delta?.content;
-          
-          if (content) {
-            onMessage(content);
+          const delta = data.choices?.[0]?.delta;
+
+          // 处理思考内容 (reasoning_content)
+          if (delta?.reasoning_content && onReasoning) {
+            onReasoning(delta.reasoning_content);
           }
-          
+
+          // 处理正常内容
+          if (delta?.content) {
+            onMessage(delta.content);
+          }
+
           // 检查是否完成
           if (data.choices?.[0]?.finish_reason) {
             onComplete();
@@ -98,18 +105,18 @@ export async function streamChat(messages, onMessage, onError, onComplete) {
           console.error('解析消息失败:', error, event.data);
         }
       },
-      
+
       onerror(error) {
         if (isAborted) return;
-        
+
         console.error('流式请求错误:', error);
-        
+
         if (error.message) {
           onError(error);
         } else {
           onError(new Error('网络连接失败，请检查网络或 API 地址'));
         }
-        
+
         throw error; // 停止重试
       },
     });

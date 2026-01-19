@@ -49,6 +49,7 @@
             :messages="messages"
             :is-streaming="isStreaming"
             :streaming-content="streamingContent"
+            :streaming-reasoning="streamingReasoning"
             :error="errorMessage"
             @send-message="handleSendMessage"
             @retry="retryLastMessage"
@@ -104,6 +105,7 @@ const router = useRouter();
 const messages = ref([]);
 const isStreaming = ref(false);
 const streamingContent = ref('');
+const streamingReasoning = ref(''); // 存储思考内容
 const errorMessage = ref('');
 const currentHTML = ref('');
 const publishing = ref(false);
@@ -252,18 +254,21 @@ async function handleSendMessage(content) {
   sendMessage(content);
 }
 
-async function sendMessage(content) {
+async function sendMessage(content, isRetry = false) {
   if (isStreaming.value) return;
 
-  // 添加用户消息
-  messages.value.push({
-    role: 'user',
-    content
-  });
+  // 如果不是重试，添加用户消息
+  if (!isRetry) {
+    messages.value.push({
+      role: 'user',
+      content
+    });
+  }
 
   // 开始流式响应
   isStreaming.value = true;
   streamingContent.value = '';
+  streamingReasoning.value = ''; // 清空思考内容
   errorMessage.value = '';
 
   // 构建消息历史（包含系统提示词）
@@ -279,6 +284,9 @@ async function sendMessage(content) {
     },
     (error) => {
       isStreaming.value = false;
+      // 发生错误时清空未完成的流式内容
+      streamingContent.value = '';
+      streamingReasoning.value = '';
       errorMessage.value = error.message || '发生错误，请重试';
       showToast('error', '错误', errorMessage.value);
     },
@@ -288,10 +296,17 @@ async function sendMessage(content) {
       
       // 将流式内容添加到消息历史
       if (streamingContent.value) {
-        messages.value.push({
+        const messageData = {
           role: 'assistant',
           content: streamingContent.value
-        });
+        };
+        
+        // 如果有思考内容，也保存到消息中
+        if (streamingReasoning.value) {
+          messageData.reasoning = streamingReasoning.value;
+        }
+        
+        messages.value.push(messageData);
         
         // 尝试提取 HTML
         const html = extractHTMLFromText(streamingContent.value);
@@ -310,7 +325,12 @@ async function sendMessage(content) {
         }
         
         streamingContent.value = '';
+        streamingReasoning.value = '';
       }
+    },
+    // onReasoning 回调 - 处理思考内容
+    (reasoningChunk) => {
+      streamingReasoning.value += reasoningChunk;
     }
   );
 }
@@ -318,15 +338,19 @@ async function sendMessage(content) {
 function retryLastMessage() {
   if (messages.value.length === 0) return;
   
-  // 移除最后一条用户消息并重新发送
+  // 清空之前的流式内容和错误
+  streamingContent.value = '';
+  streamingReasoning.value = '';
+  errorMessage.value = '';
+  
+  // 获取最后一条用户消息（不移除）
   const lastUserMessage = messages.value
     .filter(m => m.role === 'user')
     .pop();
   
   if (lastUserMessage) {
-    // 移除最后的错误消息
-    errorMessage.value = '';
-    sendMessage(lastUserMessage.content);
+    // 使用重试标记，避免重复添加用户消息
+    sendMessage(lastUserMessage.content, true);
   }
 }
 
