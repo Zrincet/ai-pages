@@ -210,18 +210,13 @@ function onModelSaved() {
 }
 
 function onOpenPage(item) {
-  if (item.isDraft) {
-    // 草稿：直接跳到设计页面，会自动加载保存的对话
-    router.push('/design');
-  } else {
-    // 已发布：跳转到设计页面查看
-    router.push({
-      name: 'design',
-      query: {
-        uuid: item.uuid
-      }
-    });
-  }
+  // 不论是草稿还是已发布，都传递 uuid 参数
+  router.push({
+    name: 'design',
+    query: {
+      uuid: item.uuid
+    }
+  });
 }
 
 function showToast(type, title, message) {

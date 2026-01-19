@@ -189,6 +189,16 @@ async function loadFromHistory(uuid) {
   try {
     showToast('info', '加载中', '正在加载历史记录...');
     
+    // 如果是草稿，需要更新 sessionId 和 draftUUID 以保持一致性
+    if (uuid.startsWith('draft-')) {
+      const draftSessionId = parseInt(uuid.replace('draft-', ''), 10);
+      if (!isNaN(draftSessionId)) {
+        sessionId.value = draftSessionId;
+        draftUUID = uuid;
+        saveSessionId(draftSessionId);
+      }
+    }
+    
     // 从 localStorage 加载聊天记录
     const savedChat = getCurrentChat(uuid);
     
